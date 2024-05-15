@@ -1,0 +1,95 @@
+{
+  "Comment": "State machine to read data in raw layer through Catalog and process the data and store into Clean/de-id layer. It will trigger notifications upon Job success or failure.",
+  "StartAt": "Phase_Job_Raw_To_Clean",
+  "States": {
+    "SNS Publish Fail Msg": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn.$": "States.Format('arn:aws:sns:us-east-1:{}:{}', $.AccountId,$.TopicName)",
+        "Subject.$": "States.Format('Failure (ocse-deid-main-raw-workflow) Notification - {}', $.Dataset)",
+        "Message.$": "$.cause.Cause"
+      },
+      "Next": "Mark Fail"
+    },
+    "Phase_Job_Raw_To_Clean": {
+      "Type": "Parallel",
+      "Next": "SNS Publish Message",
+      "Branches": [
+        {
+          "StartAt": "Start Job_Raw_To_Clean",
+          "States": {
+            "Start Job_Raw_To_Clean": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::glue:startJobRun.sync",
+              "Parameters": {
+                "JobName": "ocse-deid-main-raw-clean-job",
+                "Arguments": {
+                  "--dataset_name.$": "$.Dataset",
+                  "--deid_tbl_name": "deid_main_mapping",
+                  "--envname.$": "$.EnvName",
+                  "--source_db.$": "States.Format('ocse-{}-deid-main-raw-glue-db', $.EnvName)",
+                  "--target_db.$": "States.Format('ocse-{}-da-main-deidentified-glue-db', $.EnvName)"
+                }
+              },
+              "Next": "Phase_End_Next_Success",
+              "ResultPath": "$.rt"
+            },
+            "Phase_End_Next_Success": {
+              "Type": "Pass",
+              "End": true,
+              "ResultPath": null
+            }
+          }
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Pass",
+          "Comment": "Catch All Errors Thrown While Running Glue Job",
+          "ResultPath": "$.cause"
+        }
+      ],
+      "ResultPath": "$",
+      "OutputPath": "$[0]"
+    },
+    "Pass": {
+      "Type": "Pass",
+      "Next": "SNS Publish Fail Msg"
+    },
+    "SNS Publish Message": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn.$": "States.Format('arn:aws:sns:us-east-1:{}:{}', $.AccountId,$.TopicName)",
+        "Subject.$": "States.Format('Success Notification-{}', $.Dataset)",
+        "Message.$": "States.Format('Workflow (ocse-deid-main-raw-workflow) has been completed successfully for the dataset - {}', $.Dataset)"
+      },
+      "Next": "SQS - Invoke Workflow",
+      "ResultPath": null
+    },
+    "SQS - Invoke Workflow": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sqs:sendMessage",
+      "Parameters": {
+        "QueueUrl.$": "States.Format('https://sqs.us-east-1.amazonaws.com/{}/{}', $.AccountId,$.QueueName)",
+        "MessageBody": {
+          "dataset.$": "$.Dataset",
+          "envname.$": "$.EnvName",
+          "accnum.$": "$.AccountId",
+          "topicname.$": "$.TopicName"
+        }
+      },
+      "Next": "Mark Success"
+    },
+    "Mark Fail": {
+      "Type": "Fail"
+    },
+    "Mark Success": {
+      "Type": "Succeed"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: 'Creates AWS Lambda for the DA-Main subsystem'
+Parameters:
+  EnvId:
+    Description: 'Environment ID'
+    Type: String
+    AllowedValues:
+      - syt
+      - val
+      - prd
+  lambdaArn:
+    Type: String 
+    Default: arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python311:11
+      
+Mappings:
+  RoleConfigByEnvId:
+    syt:
+      ResourceDescriptionPrefix: 'OCSE-SYT '
+      TagNamePrefix: 'ocse-syt.'
+    val:
+      ResourceDescriptionPrefix: 'OCSE-VAL '
+      TagNamePrefix: 'ocse-val.'
+    prd:
+      ResourceDescriptionPrefix: 'OCSE-PRD '
+      TagNamePrefix: 'ocse-prd.'
+     
+Resources:
+  ocsedeidmainrawworkflowtriggerlambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Tags:
+        - Key: 'map-migrated'
+          Value: 'mig32544'
+        - Key: 'ocss:subsystem'
+          Value: 'da-main'
+      Handler: ocse-deid-main-raw-workflow-trigger-lambda.lambda_handler
+      MemorySize: 1028
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/OcseDaMainLambdaTriggerSMRole
+      Runtime: python3.11
+      Architectures:
+        - x86_64
+      EphemeralStorage:
+        Size: 512
+      Description: "Lambda to mv files and run step function ocse-deid-main-raw-workflow"
+      FunctionName: ocse-deid-main-raw-workflow-trigger-lambda
+      PackageType: Zip
+      Layers:
+        - !Ref lambdaArn      
+      Environment:
+        Variables:
+          ACCOUNT_NUMBER: !Sub ${AWS::AccountId}
+          REGION_NAME: us-east-1
+          ENV: !Ref EnvId
+      Code:
+        S3Bucket: !Sub ocse-${EnvId}-da-main-deployment
+        S3Key: "ocse-deid-main-raw-workflow-trigger-lambda.zip"
+      Timeout: 615

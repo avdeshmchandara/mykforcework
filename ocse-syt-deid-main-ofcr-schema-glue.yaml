@@ -1,0 +1,373 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Creates OCSE environment Data Analytics Glue databases and tables.'
+# Data type change rules for Glue tables:
+# NUMBER: if > 10, bigint, else int
+# SMALLINT: do not change
+# DECIMAL: do not change
+# TIMESTAMP: do not change
+# DATE: do not change if YYYY-MM-DD format, else string 
+# the rest: string  # includes "character varying", character, varchar2
+Parameters:
+  EnvId:
+    Description: 'Environment ID'
+    Type: String
+    AllowedValues:
+      - sandbox
+      - syt
+      - val
+      - prd
+Mappings:
+  S3ConfigByEnvId:
+    sandbox:
+      DeidMainRawGlueDbS3Location: 's3://ocse-sandbox-deid-main-raw-data/glue-db/'
+    syt:
+      DeidMainRawGlueDbS3Location: 's3://ocse-syt-deid-main-raw-data/glue-db/'
+      DeidMainRawGlueDatabase: 'ocse-syt-deid-main-raw-glue-db'
+    val:
+      DeidMainRawGlueDbS3Location: 's3://ocse-val-deid-main-raw-data/glue-db/'
+      DeidMainRawGlueDatabase: 'ocse-val-deid-main-raw-glue-db'
+    prd:
+      DeidMainRawGlueDbS3Location: 's3://ocse-prd-deid-main-raw-data/glue-db/'
+      DeidMainRawGlueDatabase: 'ocse-prd-deid-main-raw-glue-db'
+Resources:
+  DeidMainRawOfcrOfcrDthinfoUserGlueTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDatabase]
+      TableInput:
+        Name: ofcr_dthinfo
+        Description: Deid Main Raw ofcr/dthinfo Glue Table
+        TableType: EXTERNAL_TABLE
+        Parameters: {
+          "EXTERNAL": "TRUE", 
+          "classification": "parquet",
+          "columnsOrdered": "true",
+          "compressionType": "none",
+          "typeOfData": "file"
+        }
+        PartitionKeys: []
+        StorageDescriptor:
+          Location: !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDbS3Location], 'ofcr/dthinfo/']]
+          StoredAsSubDirectories: False
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
+          Columns:
+            - Name: op
+              Type: string
+            - Name: ssn
+              Type: string
+            - Name: fnm
+              Type: string
+            - Name: mnm
+              Type: string
+            - Name: lnm
+              Type: string
+            - Name: dod_vrf_cd
+              Type: string
+            - Name: dod
+              Type: date
+            - Name: dob
+              Type: date
+            - Name: stus_cd
+              Type: string
+            - Name: stus_dt
+              Type: date
+            - Name: insrt_ts
+              Type: timestamp
+            - Name: lu_ts
+              Type: timestamp
+            - Name: dms_commit_ts
+              Type: timestamp
+  DeidMainRawOfcrOfcrFamviUserGlueTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDatabase]
+      TableInput:
+        Name: ofcr_famvi
+        Description: Deid Main Raw ofcr/famvi Glue Table
+        TableType: EXTERNAL_TABLE
+        Parameters: {
+          "EXTERNAL": "TRUE", 
+          "classification": "parquet",
+          "columnsOrdered": "true",
+          "compressionType": "none",
+          "typeOfData": "file"
+        }
+        PartitionKeys: []
+        StorageDescriptor:
+          Location: !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDbS3Location], 'ofcr/famvi/']]
+          StoredAsSubDirectories: False
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
+          Columns:
+            - Name: op
+              Type: string
+            - Name: st
+              Type: string
+            - Name: st_case_id
+              Type: string
+            - Name: ssn
+              Type: string
+            - Name: ssn_seq
+              Type: int
+            - Name: fv_dt_estb
+              Type: date
+            - Name: fv_dt_closd
+              Type: date
+            - Name: dms_commit_ts
+              Type: timestamp
+  DeidMainRawOfcrOfcrFcrcaseUserGlueTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDatabase]
+      TableInput:
+        Name: ofcr_fcrcase
+        Description: Deid Main Raw ofcr/fcrcase Glue Table
+        TableType: EXTERNAL_TABLE
+        Parameters: {
+          "EXTERNAL": "TRUE", 
+          "classification": "parquet",
+          "columnsOrdered": "true",
+          "compressionType": "none",
+          "typeOfData": "file"
+        }
+        PartitionKeys: []
+        StorageDescriptor:
+          Location: !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDbS3Location], 'ofcr/fcrcase/']]
+          StoredAsSubDirectories: False
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
+          Columns:
+            - Name: op
+              Type: string
+            - Name: st
+              Type: string
+            - Name: st_case_id
+              Type: string
+            - Name: btch_num
+              Type: string
+            - Name: case_typ
+              Type: string
+            - Name: rgstr_dt
+              Type: date
+            - Name: xmsn_dt
+              Type: date
+            - Name: upd_dt
+              Type: date
+            - Name: closd_dt
+              Type: date
+            - Name: closr_rsn
+              Type: string
+            - Name: crt_ord
+              Type: string
+            - Name: fips_cnty_cd
+              Type: string
+            - Name: user_cd
+              Type: string
+            - Name: dms_commit_ts
+              Type: timestamp
+  DeidMainRawOfcrOfcrFipscrefUserGlueTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDatabase]
+      TableInput:
+        Name: ofcr_fipscref
+        Description: Deid Main Raw ofcr/fipscref Glue Table
+        TableType: EXTERNAL_TABLE
+        Parameters: {
+          "EXTERNAL": "TRUE", 
+          "classification": "parquet",
+          "columnsOrdered": "true",
+          "compressionType": "none",
+          "typeOfData": "file"
+        }
+        PartitionKeys: []
+        StorageDescriptor:
+          Location: !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDbS3Location], 'ofcr/fipscref/']]
+          StoredAsSubDirectories: False
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
+          Columns:
+            - Name: op
+              Type: string
+            - Name: st
+              Type: string
+            - Name: fips_cnty_cd
+              Type: string
+            - Name: fips_cnty_cdesc
+              Type: string
+            - Name: eff_stdt
+              Type: date
+            - Name: eff_endt
+              Type: date
+            - Name: insrt_ts
+              Type: timestamp
+            - Name: lu_ts
+              Type: timestamp
+            - Name: dms_commit_ts
+              Type: timestamp
+  DeidMainRawOfcrOfcrOtherUserGlueTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDatabase]
+      TableInput:
+        Name: ofcr_other
+        Description: Deid Main Raw ofcr/other Glue Table
+        TableType: EXTERNAL_TABLE
+        Parameters: {
+          "EXTERNAL": "TRUE", 
+          "classification": "parquet",
+          "columnsOrdered": "true",
+          "compressionType": "none",
+          "typeOfData": "file"
+        }
+        PartitionKeys: []
+        StorageDescriptor:
+          Location: !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDbS3Location], 'ofcr/other/']]
+          StoredAsSubDirectories: False
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
+          Columns:
+            - Name: op
+              Type: string
+            - Name: st
+              Type: string
+            - Name: st_case_id
+              Type: string
+            - Name: ssn
+              Type: string
+            - Name: ssn_seq
+              Type: int
+            - Name: oth_seq_no
+              Type: int
+            - Name: oth_src
+              Type: string
+            - Name: oth_fnm16
+              Type: string
+            - Name: oth_lnm30
+              Type: string
+            - Name: oth_mnm16
+              Type: string
+            - Name: oth_ssn
+              Type: string
+            - Name: oth_ssn_vrf
+              Type: string
+            - Name: oth_fv_ind
+              Type: string
+            - Name: dms_commit_ts
+              Type: timestamp
+  DeidMainRawOfcrOfcrPersonUserGlueTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDatabase]
+      TableInput:
+        Name: ofcr_person
+        Description: Deid Main Raw ofcr/person Glue Table
+        TableType: EXTERNAL_TABLE
+        Parameters: {
+          "EXTERNAL": "TRUE", 
+          "classification": "parquet",
+          "columnsOrdered": "true",
+          "compressionType": "none",
+          "typeOfData": "file"
+        }
+        PartitionKeys: []
+        StorageDescriptor:
+          Location: !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDbS3Location], 'ofcr/person/']]
+          StoredAsSubDirectories: False
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
+          Columns:
+            - Name: op
+              Type: string
+            - Name: st
+              Type: string
+            - Name: st_case_id
+              Type: string
+            - Name: ssn
+              Type: string
+            - Name: ssn_seq
+              Type: int
+            - Name: ssn_vrf
+              Type: string
+            - Name: fnm16
+              Type: string
+            - Name: mnm16
+              Type: string
+            - Name: lnm30
+              Type: string
+            - Name: sex
+              Type: string
+            - Name: dob
+              Type: date
+            - Name: fv_ind
+              Type: string
+            - Name: upd_dt
+              Type: date
+            - Name: prtcp_typ
+              Type: string
+            - Name: del_dt
+              Type: date
+            - Name: st_mem_id
+              Type: string
+            - Name: dod
+              Type: date
+            - Name: rgstr_dt
+              Type: date
+            - Name: btch_num
+              Type: string
+            - Name: dms_commit_ts
+              Type: timestamp
+  DeidMainRawOfcrOfcrStatesUserGlueTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDatabase]
+      TableInput:
+        Name: ofcr_states
+        Description: Deid Main Raw ofcr/states Glue Table
+        TableType: EXTERNAL_TABLE
+        Parameters: {
+          "EXTERNAL": "TRUE", 
+          "classification": "parquet",
+          "columnsOrdered": "true",
+          "compressionType": "none",
+          "typeOfData": "file"
+        }
+        PartitionKeys: []
+        StorageDescriptor:
+          Location: !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, DeidMainRawGlueDbS3Location], 'ofcr/states/']]
+          StoredAsSubDirectories: False
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe
+          Columns:
+            - Name: op
+              Type: string
+            - Name: st
+              Type: string
+            - Name: st_abbrev
+              Type: string
+            - Name: state
+              Type: string
+            - Name: dms_commit_ts
+              Type: timestamp

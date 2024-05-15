@@ -1,0 +1,274 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template for creating Event Bridge scheduler rules - Source database schema wise"
+Parameters:
+  EnvId:
+    Description: "Environment ID"
+    Type: String
+    AllowedValues:
+      - syt
+      - val
+      - prd
+Mappings:
+  ConfigByEnvId:
+    dev:
+      ResourceDescriptionPrefix: "OCSE-DEV "
+      TagNamePrefix: "ocse-dev."
+    syt:
+      ResourceDescriptionPrefix: "OCSE-SYT "
+      TagNamePrefix: "ocse-syt."
+      PortalCommSchemaSchedule: DISABLED
+      PortalAudtSchemaSchedule: DISABLED
+      PortalPrflSchemaSchedule: DISABLED
+      PortalPtlSchemaSchedule: DISABLED
+      FplsOfcrSchemaSchedule: DISABLED
+
+    val:
+      ResourceDescriptionPrefix: "OCSE-VAL "
+      TagNamePrefix: "ocse-val."
+      PortalCommSchemaSchedule: DISABLED
+      PortalAudtSchemaSchedule: DISABLED
+      PortalPrflSchemaSchedule: DISABLED
+      PortalPtlSchemaSchedule: DISABLED
+      FplsOfcrSchemaSchedule: DISABLED
+    prd:
+      ResourceDescriptionPrefix: "OCSE-PRD "
+      TagNamePrefix: "ocse-prd."
+      PortalCommSchemaSchedule: ENABLED
+      PortalAudtSchemaSchedule: ENABLED
+      PortalPrflSchemaSchedule: ENABLED
+      PortalPtlSchemaSchedule: ENABLED
+      FplsOfcrSchemaSchedule: ENABLED
+
+Resources:
+  OcsedaScheduleGroup:
+    Type: AWS::Scheduler::ScheduleGroup
+    Properties:
+      Name: ocse-deid-main-workflow-schedule-group
+
+  OcsedaPortalCommSchemaSchedule:
+    Type: AWS::Scheduler::Schedule
+    DependsOn: OcsedaScheduleGroup
+    Properties:
+      GroupName: ocse-deid-main-workflow-schedule-group
+      Name: ocse-deid-main-comm-workflow-schedule-rule
+      FlexibleTimeWindow:
+        Mode: FLEXIBLE
+        MaximumWindowInMinutes: 1
+      ScheduleExpression: cron(0 6 * * ? *)
+      ScheduleExpressionTimezone: America/New_York
+      State: !FindInMap [ConfigByEnvId, !Ref EnvId, PortalCommSchemaSchedule]
+      Target:
+        Arn: !Sub arn:aws:lambda:us-east-1:${AWS::AccountId}:function:ocse-deid-main-raw-workflow-trigger-lambda
+        RoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/OcseDeidMainEventBridgeSchedulerServiceRole
+        Input: |
+          {
+          "csp_comm": {
+              "schema-fldr-nm": "comm",
+              "table-names": [
+                    "affiln_comm_rtng_ref",
+                    "affiln_typ_ref",
+                    "centl_mailbox_pref",
+                    "comm",
+                    "comm_actn",
+                    "comm_actn_pref_xref",
+                    "comm_actn_typ_ref",
+                    "comm_affiln_typ_ref",
+                    "comm_app_actvn_ref",
+                    "comm_app_prfl_stus",
+                    "comm_atcht",
+                    "comm_atcht_ctnt_typ_ref",
+                    "comm_btch_ntfn",
+                    "comm_btch_ntfn_comm",
+                    "comm_centl_mailbox_pref_xref",
+                    "comm_pref",
+                    "comm_pref_comm_typ_msg_xref",
+                    "comm_pref_org_rlshp",
+                    "comm_prfl_stus_ref",
+                    "comm_typ_msg",
+                    "comm_typ_msg_typ_ref",
+                    "comm_typ_ref",
+                    "comm_user",
+                    "comm_user_pref_xref",
+                    "prtcpt",
+                    "prtcpt_typ_ref",
+                    "state_ref"
+              ]
+          }
+          }
+
+  OcsedaPortalAudtSchemaSchedule:
+    Type: AWS::Scheduler::Schedule
+    DependsOn: OcsedaScheduleGroup
+    Properties:
+      GroupName: ocse-deid-main-workflow-schedule-group
+      Name: ocse-deid-main-audt-workflow-schedule-rule
+      FlexibleTimeWindow:
+        Mode: FLEXIBLE
+        MaximumWindowInMinutes: 1
+      ScheduleExpression: cron(0 6 * * ? *)
+      ScheduleExpressionTimezone: America/New_York
+      State: !FindInMap [ConfigByEnvId, !Ref EnvId, PortalAudtSchemaSchedule]
+      Target:
+        Arn: !Sub arn:aws:lambda:us-east-1:${AWS::AccountId}:function:ocse-deid-main-raw-workflow-trigger-lambda
+        RoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/OcseDeidMainEventBridgeSchedulerServiceRole
+        Input: |
+          {
+          "source-fldr-nm": "landing",
+          "target-fldr-nam": "glue-db",
+          "source-file-fmt": "parquet",
+          "csp_audt": {
+              "schema-fldr-nm": "audt",
+              "table-names": [
+                "actn_ref",
+                "application_typ_ref",
+                "audt",
+                "btch_oper_typ_ref",
+                "page_typ_ref",
+                "prc_ref",
+                "state_ref",
+                "tracking"
+              ]
+          }
+          }
+  OcsedaPortalPrflSchemaSchedule:
+    Type: AWS::Scheduler::Schedule
+    DependsOn: OcsedaScheduleGroup
+    Properties:
+      GroupName: ocse-deid-main-workflow-schedule-group
+      Name: ocse-deid-main-prfl-workflow-schedule-rule
+      FlexibleTimeWindow:
+        Mode: FLEXIBLE
+        MaximumWindowInMinutes: 1
+      ScheduleExpression: cron(0 6 * * ? *)
+      ScheduleExpressionTimezone: America/New_York
+      State: !FindInMap [ConfigByEnvId, !Ref EnvId, PortalPrflSchemaSchedule]
+      Target:
+        Arn: !Sub arn:aws:lambda:us-east-1:${AWS::AccountId}:function:ocse-deid-main-raw-workflow-trigger-lambda
+        RoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/OcseDeidMainEventBridgeSchedulerServiceRole
+        Input: |
+          {
+          "source-fldr-nm": "landing",
+          "target-fldr-nam": "glue-db",
+          "source-file-fmt": "parquet",
+          "csp_prfl": {
+              "schema-fldr-nm": "prfl",
+              "table-names": [
+                "acct",
+                "acct_org_xref",
+                "affiln_typ_ref",
+                "cntct_typ_grp_cntct_typ_xref",
+                "cntct_typ_grp_ref",
+                "cntct_typ_ref",
+                "empr_info_stus",
+                "org_enrlt",
+                "org_enrlt_stus_ref",
+                "org_enrlt_typ_ref",
+                "org_enrlt_user",
+                "prfl_pref",
+                "prfl_pref_qstn_ref",
+                "prfl_stus_ref",
+                "prsn",
+                "prsn_acct_xref",
+                "prsn_org_cntct_typ_app_xref",
+                "prsn_org_prsn_updt_audt",
+                "prsn_org_xref",
+                "resp_formt_ref",
+                "st_user_id_rlshp"
+              ]
+          }
+          }
+  OcsedaPortalPtlSchemaSchedule:
+    Type: AWS::Scheduler::Schedule
+    DependsOn: OcsedaScheduleGroup
+    Properties:
+      GroupName: ocse-deid-main-workflow-schedule-group
+      Name: ocse-deid-main-ptl-workflow-schedule-rule
+      FlexibleTimeWindow:
+        Mode: FLEXIBLE
+        MaximumWindowInMinutes: 1
+      ScheduleExpression: cron(0 6 * * ? *)
+      ScheduleExpressionTimezone: America/New_York
+      State: !FindInMap [ConfigByEnvId, !Ref EnvId, PortalPtlSchemaSchedule]
+      Target:
+        Arn: !Sub arn:aws:lambda:us-east-1:${AWS::AccountId}:function:ocse-deid-main-raw-workflow-trigger-lambda
+        RoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/OcseDeidMainEventBridgeSchedulerServiceRole
+        Input: |
+          {
+          "source-fldr-nm": "landing",
+          "target-fldr-nam": "glue-db",
+          "source-file-fmt": "parquet",
+          "csp_ptl": {
+              "schema-fldr-nm": "ptl",
+              "table-names": [
+                  "account_locations",
+                  "account_status_ref",
+                  "action_typ_ref",
+                  "addr_typ_ref",
+                  "alternative_org_address",
+                  "alternative_org_address_typ",
+                  "app_clsfn_ref",
+                  "contact",
+                  "contact_typ_ref",
+                  "country_ref",
+                  "empr_certn_elgt_stus_ref",
+                  "org_prfl",
+                  "org_prfl_addr_typ",
+                  "org_prfl_vrfn_cd_ref",
+                  "org_relationship",
+                  "org_relationship_typ_ref",
+                  "org_resplt",
+                  "org_resplt_ref",
+                  "org_role_app_relationship",
+                  "org_role_typ_ref",
+                  "org_typ_ref_org_resplt_ref_xref",
+                  "org_typ_ref_org_role_typ_ref_xref",
+                  "page_typ_ref",
+                  "prfl_role_app_relationship",
+                  "role_app_relationship",
+                  "role_page_relationship",
+                  "role_typ_ref",
+                  "state_county_ref",
+                  "state_role_app_relationship",
+                  "user_account",
+                  "user_affiln_ref",
+                  "user_affiln_subfn_ref",
+                  "user_afiln_subfn_role_typ_xref",
+                  "user_org_relationship",
+                  "user_role_app_relationship"
+              ]
+          } 
+          }
+
+  OcsedaFplsofcrSchemaSchedule:
+    Type: AWS::Scheduler::Schedule
+    DependsOn: OcsedaScheduleGroup
+    Properties:
+      GroupName: ocse-deid-main-workflow-schedule-group
+      Name: ocse-deid-main-ofcr-workflow-schedule-rule
+      FlexibleTimeWindow:
+        Mode: FLEXIBLE
+        MaximumWindowInMinutes: 1
+      ScheduleExpression: cron(0 6 * * ? *)
+      ScheduleExpressionTimezone: America/New_York
+      State: !FindInMap [ConfigByEnvId, !Ref EnvId, FplsOfcrSchemaSchedule]
+      Target:
+        Arn: !Sub arn:aws:lambda:us-east-1:${AWS::AccountId}:function:ocse-deid-main-raw-workflow-trigger-lambda
+        RoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/OcseDeidMainEventBridgeSchedulerServiceRole
+        Input: |
+          {
+          "source-fldr-nm": "landing",
+          "target-fldr-nam": "glue-db",
+          "source-file-fmt": "parquet",
+          "fpls_ofcr": {
+              "schema-fldr-nm": "ofcr",
+              "table-names": [
+                "dthinfo",
+                "famvi",
+                "fcrcase",
+                "fipscref",
+                "other",
+                "person",
+                "states"
+              ]
+          }
+          }

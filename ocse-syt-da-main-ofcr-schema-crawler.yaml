@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Creates OCSE environment Data Analytics Glue databases and tables.'
+# Data type change rules for Glue tables:
+# NUMBER: if > 10, bigint, else int
+# SMALLINT: do not change
+# DECIMAL: do not change
+# TIMESTAMP: do not change
+# DATE: do not change if YYYY-MM-DD format, else string 
+# the rest: string  # includes "character varying", character, varchar2
+Parameters:
+  EnvId:
+    Description: 'Environment ID'
+    Type: String
+    AllowedValues:
+      - sandbox
+      - syt
+      - val
+      - prd
+Mappings:
+  S3ConfigByEnvId:
+    sandbox:
+      CuratedGlueDbS3Location: 's3://ocse-sandbox-da-main-curated-data/glue-db/'
+      DatabaseName: ocse-sandbox-da-main-curated-glue-db
+    syt:
+      CuratedGlueDbS3Location: 's3://ocse-syt-da-main-curated-data/glue-db/'
+      DatabaseName: ocse-syt-da-main-curated-glue-db
+    val:
+      CuratedGlueDbS3Location: 's3://ocse-val-da-main-curated-data/glue-db/'
+      DatabaseName: ocse-val-da-main-curated-glue-db
+    prd:
+      CuratedGlueDbS3Location: 's3://ocse-prd-da-main-curated-data/glue-db/'
+      DatabaseName: ocse-prd-da-main-curated-glue-db
+Resources:
+  CuratedOfcrDthinfoCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: !Sub ocse-da-main-ofcr_dthinfo-curated-crawler
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DatabaseName]
+      Description: Join ['', [!Ref EnvId, 'Crawler on Curated database']]
+      RecrawlPolicy: 
+          RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/OcseDaMainGlueServiceRole'
+      SchemaChangePolicy: 
+          UpdateBehavior: UPDATE_IN_DATABASE
+          DeleteBehavior: DELETE_FROM_DATABASE            
+      Targets:
+        DeltaTargets: 
+          - CreateNativeDeltaTable: true
+            DeltaTables: 
+            - !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, CuratedGlueDbS3Location], 'ofcr/ofcr_dthinfo/']]
+            WriteManifest: false
+  CuratedOfcrFamviCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: !Sub ocse-da-main-ofcr_famvi-curated-crawler
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DatabaseName]
+      Description: Join ['', [!Ref EnvId, 'Crawler on Curated database']]
+      RecrawlPolicy: 
+          RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/OcseDaMainGlueServiceRole'
+      SchemaChangePolicy: 
+          UpdateBehavior: UPDATE_IN_DATABASE
+          DeleteBehavior: DELETE_FROM_DATABASE            
+      Targets:
+        DeltaTargets: 
+          - CreateNativeDeltaTable: true
+            DeltaTables: 
+            - !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, CuratedGlueDbS3Location], 'ofcr/ofcr_famvi/']]
+            WriteManifest: false
+  CuratedOfcrFcrcaseCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: !Sub ocse-da-main-ofcr_fcrcase-curated-crawler
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DatabaseName]
+      Description: Join ['', [!Ref EnvId, 'Crawler on Curated database']]
+      RecrawlPolicy: 
+          RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/OcseDaMainGlueServiceRole'
+      SchemaChangePolicy: 
+          UpdateBehavior: UPDATE_IN_DATABASE
+          DeleteBehavior: DELETE_FROM_DATABASE            
+      Targets:
+        DeltaTargets: 
+          - CreateNativeDeltaTable: true
+            DeltaTables: 
+            - !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, CuratedGlueDbS3Location], 'ofcr/ofcr_fcrcase/']]
+            WriteManifest: false
+  CuratedOfcrFipscrefCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: !Sub ocse-da-main-ofcr_fipscref-curated-crawler
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DatabaseName]
+      Description: Join ['', [!Ref EnvId, 'Crawler on Curated database']]
+      RecrawlPolicy: 
+          RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/OcseDaMainGlueServiceRole'
+      SchemaChangePolicy: 
+          UpdateBehavior: UPDATE_IN_DATABASE
+          DeleteBehavior: DELETE_FROM_DATABASE            
+      Targets:
+        DeltaTargets: 
+          - CreateNativeDeltaTable: true
+            DeltaTables: 
+            - !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, CuratedGlueDbS3Location], 'ofcr/ofcr_fipscref/']]
+            WriteManifest: false
+  CuratedOfcrOtherCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: !Sub ocse-da-main-ofcr_other-curated-crawler
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DatabaseName]
+      Description: Join ['', [!Ref EnvId, 'Crawler on Curated database']]
+      RecrawlPolicy: 
+          RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/OcseDaMainGlueServiceRole'
+      SchemaChangePolicy: 
+          UpdateBehavior: UPDATE_IN_DATABASE
+          DeleteBehavior: DELETE_FROM_DATABASE            
+      Targets:
+        DeltaTargets: 
+          - CreateNativeDeltaTable: true
+            DeltaTables: 
+            - !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, CuratedGlueDbS3Location], 'ofcr/ofcr_other/']]
+            WriteManifest: false
+  CuratedOfcrPersonCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: !Sub ocse-da-main-ofcr_person-curated-crawler
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DatabaseName]
+      Description: Join ['', [!Ref EnvId, 'Crawler on Curated database']]
+      RecrawlPolicy: 
+          RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/OcseDaMainGlueServiceRole'
+      SchemaChangePolicy: 
+          UpdateBehavior: UPDATE_IN_DATABASE
+          DeleteBehavior: DELETE_FROM_DATABASE            
+      Targets:
+        DeltaTargets: 
+          - CreateNativeDeltaTable: true
+            DeltaTables: 
+            - !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, CuratedGlueDbS3Location], 'ofcr/ofcr_person/']]
+            WriteManifest: false
+  CuratedOfcrStatesCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: !Sub ocse-da-main-ofcr_states-curated-crawler
+      DatabaseName: !FindInMap [S3ConfigByEnvId, !Ref EnvId, DatabaseName]
+      Description: Join ['', [!Ref EnvId, 'Crawler on Curated database']]
+      RecrawlPolicy: 
+          RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/OcseDaMainGlueServiceRole'
+      SchemaChangePolicy: 
+          UpdateBehavior: UPDATE_IN_DATABASE
+          DeleteBehavior: DELETE_FROM_DATABASE            
+      Targets:
+        DeltaTargets: 
+          - CreateNativeDeltaTable: true
+            DeltaTables: 
+            - !Join ['', [!FindInMap [S3ConfigByEnvId, !Ref EnvId, CuratedGlueDbS3Location], 'ofcr/ofcr_states/']]
+            WriteManifest: false
